@@ -10,6 +10,9 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 const val PRIMARY_CHANNEL_ID: String = "primary_notification_channel"
 const val NOTIFICATION_ID: Int = 0
@@ -23,6 +26,14 @@ class NotificationJobService : JobService() {
     }
 
     override fun onStartJob(params: JobParameters?): Boolean {
+        CoroutineScope(Dispatchers.Default).launch {
+            executeJob(params)
+        }
+        // return true when Job is done in background and needs to be rescheduled if it is not finished yet
+        return true
+    }
+
+    private suspend fun executeJob(params: JobParameters?) {
         //Create Notification Channel
         createNotificationChannel()
 
@@ -37,8 +48,7 @@ class NotificationJobService : JobService() {
 
         val builder = createNotification(contentPendingIntent)
         mNotificationManager.notify(NOTIFICATION_ID, builder.build())
-
-        return false
+        jobFinished(params, false)
     }
 
     private fun createNotification(contentPendingIntent: PendingIntent): NotificationCompat.Builder {
